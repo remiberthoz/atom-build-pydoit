@@ -2,13 +2,18 @@
   "name": "atom-build-pydoit",
   "main": "./lib/atom-build-pydoit",
   "version": "0.0.0",
-  "description": "A short description of your package",
+  "description": "A pydoit target provider for the build plugin of the atom.io editor",
   "keywords": [
+      "build",
+      "compile",
+      "pydoit",
+      "doit",
+      "dodo.py"
   ],
   "activationCommands": {
     "atom-workspace": "atom-build-pydoit:toggle"
   },
-  "repository": "https://github.com/atom/atom-build-pydoit",
+  "repository": "https://github.com/remiberthoz/atom-build-pydoit",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
