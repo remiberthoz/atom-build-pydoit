@@ -1,0 +1,26 @@
+{
+  "context-menu": {
+    "atom-text-editor": [
+      {
+        "label": "Toggle atom-build-pydoit",
+        "command": "atom-build-pydoit:toggle"
+      }
+    ]
+  },
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "atom-build-pydoit",
+          "submenu": [
+            {
+              "label": "Toggle",
+              "command": "atom-build-pydoit:toggle"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
