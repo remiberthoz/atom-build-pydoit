@@ -1,73 +1,72 @@
 'use babel';
 
-import AtomBuildPydoit from '../lib/atom-build-pydoit';
-
-// Use the command `window:run-package-specs` (cmd-alt-ctrl-p) to run specs.
-//
-// To run a specific `it` or `describe` block add an `f` to the front (e.g. `fit`
-// or `fdescribe`). Remove the `f` to unfocus the block.
+import fs from 'fs';
+import path from 'path';
+import { providePydoitBuilder } from '../lib/atom-build-pydoit';
 
 describe('AtomBuildPydoit', () => {
-  let workspaceElement, activationPromise;
+    let directory;  // assigned by beforeEach() and removed by afterEach()
+    let builder;  // constructed by beforeEach()
+    const Builder = providePydoitBuilder();
 
-  beforeEach(() => {
-    workspaceElement = atom.views.getView(atom.workspace);
-    activationPromise = atom.packages.activatePackage('atom-build-pydoit');
-  });
+    beforeEach(() => {
+        tempDirPromise = new Promise((resolve, reject) => {
+            fs.mkdtemp('atom-build-pydoit-spec-', (error, dir) => {
+                if (error) {
+                    throw error;
+                }
+                resolve(dir);
+            });
+        });
 
-  describe('when the atom-build-pydoit:toggle event is triggered', () => {
-    it('hides and shows the modal panel', () => {
-      // Before the activation event the view is not on the DOM, and no panel
-      // has been created
-      expect(workspaceElement.querySelector('.atom-build-pydoit')).not.toExist();
-
-      // This is an activation event, triggering it will cause the package to be
-      // activated.
-      atom.commands.dispatch(workspaceElement, 'atom-build-pydoit:toggle');
-
-      waitsForPromise(() => {
-        return activationPromise;
-      });
-
-      runs(() => {
-        expect(workspaceElement.querySelector('.atom-build-pydoit')).toExist();
-
-        let atomBuildPydoitElement = workspaceElement.querySelector('.atom-build-pydoit');
-        expect(atomBuildPydoitElement).toExist();
-
-        let atomBuildPydoitPanel = atom.workspace.panelForItem(atomBuildPydoitElement);
-        expect(atomBuildPydoitPanel.isVisible()).toBe(true);
-        atom.commands.dispatch(workspaceElement, 'atom-build-pydoit:toggle');
-        expect(atomBuildPydoitPanel.isVisible()).toBe(false);
-      });
+        waitsForPromise(() => {
+            return tempDirPromise
+                .then((dir) => (directory = `${dir}/`))
+                .then((dir) => builder = new Builder(dir));
+        });
     });
 
-    it('hides and shows the view', () => {
-      // This test shows you an integration test testing at the view level.
+    function removeDirRec(dir) {
+        if (fs.existsSync(dir)) {
+            fs.readdirSync(dir).forEach(function(entry) {
+                var entry_path = path.join(dir, entry);
+                if (fs.lstatSync(entry_path).isDirectory()) {
+                    removeDirRec(entry_path);
+                } else {
+                    fs.unlinkSync(entry_path);
+                }
+            });
+            fs.rmdirSync(dir);
+        }
+    }
+    afterEach(() => {
+        removeDirRec(directory);
+    })
 
-      // Attaching the workspaceElement to the DOM is required to allow the
-      // `toBeVisible()` matchers to work. Anything testing visibility or focus
-      // requires that the workspaceElement is on the DOM. Tests that attach the
-      // workspaceElement to the DOM are generally slower than those off DOM.
-      jasmine.attachToDOM(workspaceElement);
+    describe('when doit is done', () => {
+        beforeEach(() => {
+            fs.copyFileSync(`${__dirname}/dodo.py`, directory + 'dodo.py');
+        });
+        it('should be eligble', () => {
+            expect(builder.isEligible(directory)).toBe(true);
+        });
+        it('should list the targets', () => {
+            waitsForPromise(() => {
+                return Promise.resolve(builder.settings(directory)).then((tasksList) => {
+                    // ... the list should have the correct number of items
+                    expect(tasksList.length).toBe(2);
 
-      expect(workspaceElement.querySelector('.atom-build-pydoit')).not.toExist();
+                    // ... the task names should be correct
+                    expect(tasksList[0].args).toEqual(['testIt']);
+                    expect(tasksList[1].args).toEqual(['testIt_also']);
+                })
+            })
+        })
+    })
 
-      // This is an activation event, triggering it causes the package to be
-      // activated.
-      atom.commands.dispatch(workspaceElement, 'atom-build-pydoit:toggle');
-
-      waitsForPromise(() => {
-        return activationPromise;
-      });
-
-      runs(() => {
-        // Now we can test for view visibility
-        let atomBuildPydoitElement = workspaceElement.querySelector('.atom-build-pydoit');
-        expect(atomBuildPydoitElement).toBeVisible();
-        atom.commands.dispatch(workspaceElement, 'atom-build-pydoit:toggle');
-        expect(atomBuildPydoitElement).not.toBeVisible();
-      });
+    describe('when dodo.py does not exist', () => {
+        it('sould not be eligible', () => {
+            expect(builder.isEligible(directory)).toBe(false);
+        });
     });
-  });
-});
+})

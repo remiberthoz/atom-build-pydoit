@@ -10,14 +10,17 @@
       "doit",
       "dodo.py"
   ],
-  "activationCommands": {
-    "atom-workspace": "atom-build-pydoit:toggle"
+  "providedServices": {
+    "builder": {
+        "description": "Runs pydoit in the project directory",
+        "versions": {
+            "2.0.0": "providePydoitBuilder"
+        }
+    }
   },
   "repository": "https://github.com/remiberthoz/atom-build-pydoit",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
-  },
-  "dependencies": {
   }
 }
